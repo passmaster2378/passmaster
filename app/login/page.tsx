@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signInWithPassword } from "../auth/actions";
 import { createSupabaseServerClient } from "../lib/supabase/server";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 export const metadata = {
   title: "로그인 | PassMaster",
@@ -50,7 +51,17 @@ export default async function LoginPage(props: LoginPageProps) {
           </div>
         ) : null}
 
-        <form action={signInWithPassword} className="mt-6 space-y-4">
+        <div className="mt-6">
+          <GoogleSignInButton />
+        </div>
+
+        <div className="mt-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <p className="text-xs font-medium text-slate-500">또는 이메일로</p>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+
+        <form action={signInWithPassword} className="mt-5 space-y-4">
           <div className="space-y-2">
             <label
               htmlFor="email"
