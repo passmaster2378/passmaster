@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "../auth/actions";
 import { createSupabaseServerClient } from "../lib/supabase/server";
+import { VaultClient } from "./VaultClient";
 
 export const metadata = {
   title: "마이페이지 | PassMaster",
@@ -15,6 +16,35 @@ export default async function MyPage() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  let initialItems: Array<{
+    id: string;
+    title: string;
+    username: string | null;
+    url: string | null;
+    note: string | null;
+    folder: string | null;
+    favorite: boolean;
+    updated_at: string;
+  }> = [];
+  let vaultInitError = "";
+
+  const { data, error } = await supabase
+    .from("vault_items")
+    .select("id,title,username,url,note,folder,favorite,updated_at")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    // Table not created yet (common first-run case)
+    if (String((error as { code?: string }).code) === "42P01") {
+      vaultInitError =
+        "아직 vault_items 테이블이 없어요. Supabase SQL Editor에서 supabase/vault_items.sql을 실행해 주세요.";
+    } else {
+      vaultInitError = error.message;
+    }
+  } else {
+    initialItems = (data ?? []) as typeof initialItems;
   }
 
   return (
@@ -48,6 +78,14 @@ export default async function MyPage() {
           </div>
         </div>
       </div>
+
+      {vaultInitError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          {vaultInitError}
+        </div>
+      ) : (
+        <VaultClient initialItems={initialItems} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5">
