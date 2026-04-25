@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "../auth/actions";
 import { createSupabaseServerClient } from "../lib/supabase/server";
-import { VaultClient } from "./VaultClient";
+import { ProfileClient } from "./ProfileClient";
+import type { ProfileRow } from "../profile/actions";
 
 export const metadata = {
   title: "마이페이지 | PassMaster",
@@ -18,33 +19,24 @@ export default async function MyPage() {
     redirect("/login");
   }
 
-  let initialItems: Array<{
-    id: string;
-    title: string;
-    username: string | null;
-    url: string | null;
-    note: string | null;
-    folder: string | null;
-    favorite: boolean;
-    updated_at: string;
-  }> = [];
-  let vaultInitError = "";
+  let profileTableMissing = false;
+  let initialProfile: ProfileRow | null = null;
 
-  const { data, error } = await supabase
-    .from("vault_items")
-    .select("id,title,username,url,note,folder,favorite,updated_at")
-    .order("updated_at", { ascending: false });
+  const profileRes = await supabase
+    .from("profiles")
+    .select("user_id,full_name,phone,birthdate")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (error) {
-    // Table not created yet (common first-run case)
-    if (String((error as { code?: string }).code) === "42P01") {
-      vaultInitError =
-        "아직 vault_items 테이블이 없어요. Supabase SQL Editor에서 supabase/vault_items.sql을 실행해 주세요.";
+  if (profileRes.error) {
+    if (String((profileRes.error as { code?: string }).code) === "42P01") {
+      profileTableMissing = true;
     } else {
-      vaultInitError = error.message;
+      // Non-fatal: show as missing to avoid blocking mypage
+      profileTableMissing = true;
     }
   } else {
-    initialItems = (data ?? []) as typeof initialItems;
+    initialProfile = (profileRes.data as ProfileRow | null) ?? null;
   }
 
   return (
@@ -79,13 +71,10 @@ export default async function MyPage() {
         </div>
       </div>
 
-      {vaultInitError ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-          {vaultInitError}
-        </div>
-      ) : (
-        <VaultClient initialItems={initialItems} />
-      )}
+      <ProfileClient
+        initialProfile={initialProfile}
+        tableMissing={profileTableMissing}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5">
@@ -94,6 +83,12 @@ export default async function MyPage() {
             <div className="flex items-center justify-between gap-3">
               <span className="text-slate-500">이메일</span>
               <span className="font-medium text-slate-800">{user.email ?? "—"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500">이름</span>
+              <span className="font-medium text-slate-800">
+                {initialProfile?.full_name?.trim() ? initialProfile.full_name : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-slate-500">플랜</span>
@@ -118,6 +113,12 @@ export default async function MyPage() {
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5">
           <h2 className="text-sm font-semibold text-slate-900">바로가기</h2>
           <div className="mt-3 space-y-2">
+            <Link
+              href="/vault"
+              className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
+            >
+              내 비밀번호 금고
+            </Link>
             <Link
               href="/"
               className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
