@@ -35,11 +35,13 @@ export function GoogleSignInButton() {
         try {
           const supabase = createSupabaseBrowserClient();
           const siteUrl = getSiteUrl();
+          const callbackUrl = new URL("/auth/callback", `${siteUrl}/`);
+          callbackUrl.searchParams.set("next", "/mypage");
 
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: `${siteUrl}/mypage`,
+              redirectTo: callbackUrl.toString(),
             },
           });
 
@@ -52,11 +54,23 @@ export function GoogleSignInButton() {
 
           if (data.url) {
             window.location.assign(data.url);
-          } else {
-            const params = new URLSearchParams();
-            params.set("error", "Google 로그인 URL을 가져오지 못했습니다.");
-            window.location.assign(`/login?${params.toString()}`);
+            return;
           }
+
+          const params = new URLSearchParams();
+          params.set("error", "Google 로그인 URL을 가져오지 못했습니다.");
+          window.location.assign(`/login?${params.toString()}`);
+        } catch (e: unknown) {
+          const params = new URLSearchParams();
+          const message =
+            e instanceof Error
+              ? e.message
+              : "Google 로그인 처리 중 오류가 발생했습니다.";
+          params.set(
+            "error",
+            `${message} (배포환경이면 Vercel의 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY 설정도 확인해 주세요)`,
+          );
+          window.location.assign(`/login?${params.toString()}`);
         } finally {
           // If navigation happens, this won't matter; if it doesn't, re-enable.
           setPending(false);
