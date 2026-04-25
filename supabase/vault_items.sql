@@ -1,6 +1,4 @@
 -- PassMaster vault items (server-side encryption)
-
--- Enable uuid generator (Supabase usually has this available; safe to keep).
 create extension if not exists "pgcrypto";
 
 create table if not exists public.vault_items (
@@ -23,7 +21,6 @@ create table if not exists public.vault_items (
 create index if not exists vault_items_user_id_idx on public.vault_items (user_id);
 create index if not exists vault_items_updated_at_idx on public.vault_items (updated_at desc);
 
--- Auto-update updated_at
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin
@@ -39,7 +36,6 @@ for each row execute procedure public.set_updated_at();
 
 alter table public.vault_items enable row level security;
 
--- CRUD policies: only the owner can access
 drop policy if exists "vault_items_select_own" on public.vault_items;
 create policy "vault_items_select_own"
 on public.vault_items for select
@@ -60,4 +56,3 @@ drop policy if exists "vault_items_delete_own" on public.vault_items;
 create policy "vault_items_delete_own"
 on public.vault_items for delete
 using (user_id = auth.uid());
-
