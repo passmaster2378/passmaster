@@ -4,6 +4,28 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { decryptSecret, encryptSecret } from "../lib/vault/crypto";
 
+async function isProUser(userId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("plan,plan_expires_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    // If table/columns aren't present yet, treat as free.
+    return false;
+  }
+
+  const plan = String((data as { plan?: unknown } | null)?.plan ?? "free");
+  const expires = (data as { plan_expires_at?: string | null } | null)
+    ?.plan_expires_at;
+
+  if (plan !== "pro") return false;
+  if (!expires) return true;
+  return new Date(expires).getTime() > Date.now();
+}
+
 export type VaultItemRow = {
   id: string;
   title: string;
@@ -48,6 +70,17 @@ export async function createVaultItem(formData: FormData) {
   if (!title) throw new Error("사이트/이름을 입력해 주세요.");
   if (!password) throw new Error("비밀번호를 입력해 주세요.");
 
+  const isPro = await isProUser(user.id);
+  if (!isPro) {
+    const countRes = await supabase
+      .from("vault_items")
+      .select("id", { count: "exact", head: true });
+    const count = countRes.count ?? 0;
+    if (count >= 3) {
+      throw new Error("무료 플랜은 3개까지 저장할 수 있어요. 결제/입금에서 Pro를 활성화해 주세요.");
+    }
+  }
+
   const password_encrypted = encryptSecret(password);
 
   const { error } = await supabase.from("vault_items").insert({
@@ -62,6 +95,7 @@ export async function createVaultItem(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
+  revalidatePath("/vault");
   revalidatePath("/mypage");
 }
 
@@ -69,6 +103,7 @@ export async function deleteVaultItem(id: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("vault_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  revalidatePath("/vault");
   revalidatePath("/mypage");
 }
 

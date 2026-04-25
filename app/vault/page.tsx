@@ -17,6 +17,17 @@ export default async function VaultPage() {
     redirect("/login");
   }
 
+  // Plan status (fast MVP)
+  const planRes = await supabase
+    .from("profiles")
+    .select("plan,plan_expires_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const plan = planRes.error ? "free" : String(planRes.data?.plan ?? "free");
+  const expires = planRes.error ? null : (planRes.data?.plan_expires_at ?? null);
+  const proActive =
+    plan === "pro" && (!expires || new Date(expires).getTime() > Date.now());
+
   let initialItems: Array<{
     id: string;
     title: string;
@@ -65,6 +76,21 @@ export default async function VaultPage() {
           </Link>
         </div>
       </div>
+
+      {!proActive ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-950">
+          무료 플랜은 <span className="font-semibold">3개까지 저장</span>할 수 있어요.
+          더 저장하려면{" "}
+          <Link className="font-semibold text-blue-700 hover:underline" href="/billing">
+            결제/입금
+          </Link>
+          에서 Pro를 활성화해 주세요.
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-950">
+          Pro 이용 중{expires ? ` (만료: ${new Date(expires).toLocaleDateString("ko-KR")})` : ""}.
+        </div>
+      )}
 
       {vaultInitError ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
