@@ -1,4 +1,11 @@
-export default function Home() {
+import { createSupabaseServerClient } from "./lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <section className="grid gap-8 lg:grid-cols-2 lg:items-center">
       <div className="space-y-4">
@@ -16,12 +23,21 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <a
-            href="/login"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
-          >
-            로그인하기
-          </a>
+          {user ? (
+            <a
+              href="/vault"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
+            >
+              내 비밀번호 설정
+            </a>
+          ) : (
+            <a
+              href="/login"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
+            >
+              로그인하기
+            </a>
+          )}
           <a
             href="/mypage"
             className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
