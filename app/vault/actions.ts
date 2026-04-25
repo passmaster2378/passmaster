@@ -51,6 +51,42 @@ export async function listVaultItems(): Promise<VaultItemListItem[]> {
   return (data ?? []) as VaultItemListItem[];
 }
 
+export async function updateVaultItem(id: string, formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) throw new Error(userError.message);
+  if (!user) throw new Error("Not authenticated.");
+
+  const title = String(formData.get("title") ?? "").trim();
+  const username = String(formData.get("username") ?? "").trim();
+  const url = String(formData.get("url") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+  const folder = String(formData.get("folder") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!title) throw new Error("사이트/이름을 입력해 주세요.");
+
+  const update: Record<string, unknown> = {
+    title,
+    username: username || null,
+    url: url || null,
+    note: note || null,
+    folder: folder || null,
+  };
+
+  if (password) {
+    update.password_encrypted = encryptSecret(password);
+  }
+
+  const { error } = await supabase.from("vault_items").update(update).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/vault");
+  revalidatePath("/mypage");
+}
+
 export async function createVaultItem(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const {

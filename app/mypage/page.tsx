@@ -24,7 +24,7 @@ export default async function MyPage() {
 
   const profileRes = await supabase
     .from("profiles")
-    .select("user_id,full_name,phone,birthdate")
+    .select("user_id,full_name,phone,birthdate,plan,plan_expires_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -92,7 +92,9 @@ export default async function MyPage() {
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-slate-500">플랜</span>
-              <span className="font-medium text-slate-800">Free</span>
+              <span className="font-medium text-slate-800">
+                {profileRes.data?.plan === "pro" ? "Pro" : "Free"}
+              </span>
             </div>
           </div>
         </div>

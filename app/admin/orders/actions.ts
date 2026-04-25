@@ -31,11 +31,11 @@ async function assertAdmin() {
   if (error) throw new Error(error.message);
   if (!data?.is_admin) throw new Error("Not authorized.");
 
-  return supabase;
+  return { supabase, actorUserId: user.id };
 }
 
 export async function listAllOrders(): Promise<AdminOrderRow[]> {
-  const supabase = await assertAdmin();
+  const { supabase } = await assertAdmin();
   const { data, error } = await supabase
     .from("orders")
     .select("id,user_id,depositor_name,amount,currency,method,status,memo,created_at")
@@ -47,7 +47,7 @@ export async function listAllOrders(): Promise<AdminOrderRow[]> {
 }
 
 export async function setOrderStatus(id: string, status: AdminOrderRow["status"]) {
-  const supabase = await assertAdmin();
+  const { supabase, actorUserId } = await assertAdmin();
   // Fetch order user_id so we can activate plan on approval.
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -62,7 +62,19 @@ export async function setOrderStatus(id: string, status: AdminOrderRow["status"]
 
   // When paid -> activate pro for 2 months (fast MVP).
   if (status === "paid") {
-    const plan_expires_at = new Date();
+    // Extend from current expiry if still active; otherwise start from now.
+    const currentProfile = await supabase
+      .from("profiles")
+      .select("plan,plan_expires_at,full_name")
+      .eq("user_id", order.user_id)
+      .maybeSingle();
+    const currentExpiry = currentProfile.error
+      ? null
+      : (currentProfile.data?.plan_expires_at ?? null);
+    const base = currentExpiry ? new Date(currentExpiry) : new Date(0);
+    const now = new Date();
+    const start = base.getTime() > now.getTime() ? base : now;
+    const plan_expires_at = new Date(start);
     plan_expires_at.setMonth(plan_expires_at.getMonth() + 2);
 
     const { error: planError } = await supabase.from("profiles").upsert(
@@ -74,7 +86,33 @@ export async function setOrderStatus(id: string, status: AdminOrderRow["status"]
       { onConflict: "user_id" },
     );
     if (planError) throw new Error(planError.message);
+
+    // In-app notification
+    await supabase.from("notifications").insert({
+      user_id: order.user_id,
+      type: "success",
+      title: "결제가 승인됐어요",
+      body: `Pro 이용권이 활성화되었습니다. 만료일: ${plan_expires_at.toLocaleDateString("ko-KR")}`,
+    });
   }
+
+  if (status === "rejected") {
+    await supabase.from("notifications").insert({
+      user_id: order.user_id,
+      type: "error",
+      title: "결제가 거절됐어요",
+      body: "입금 정보를 다시 확인해 주세요. 필요하면 메모를 남겨주세요.",
+    });
+  }
+
+  // Audit log (best-effort)
+  await supabase.from("audit_logs").insert({
+    actor_user_id: actorUserId,
+    action: "set_order_status",
+    entity_type: "orders",
+    entity_id: id,
+    metadata: { status },
+  });
 
   revalidatePath("/admin/orders");
   revalidatePath("/billing");

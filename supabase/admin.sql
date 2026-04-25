@@ -64,3 +64,16 @@ with check (
 
 -- Note: do NOT enable update for regular users (manual approval flow).
 
+-- Notifications: allow admins to insert notifications for users
+drop policy if exists "notifications_insert_admin" on public.notifications;
+create policy "notifications_insert_admin"
+on public.notifications for insert
+with check (
+  exists (
+    select 1
+    from public.profiles p
+    where p.user_id = auth.uid()
+      and p.is_admin = true
+  )
+);
+
