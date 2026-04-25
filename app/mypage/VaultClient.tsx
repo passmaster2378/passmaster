@@ -41,20 +41,23 @@ export function VaultClient({ initialItems }: Props) {
 
         <form
           className="mt-5 grid gap-3 sm:grid-cols-2"
-          action={(formData) => {
+          id="vault-create-form"
+          onSubmit={(e) => {
+            e.preventDefault();
             setError("");
+            const form = e.currentTarget;
+            const formData = new FormData(form);
             startTransition(async () => {
               try {
                 await createVaultItem(formData);
                 const next = await listVaultItems();
                 setItems(next);
-                (document.getElementById("vault-create-form") as HTMLFormElement | null)?.reset();
-              } catch (e: unknown) {
-                setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
+                form.reset();
+              } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
               }
             });
           }}
-          id="vault-create-form"
         >
           <input
             name="title"
