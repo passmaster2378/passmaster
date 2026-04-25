@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "../lib/supabase/server";
 import { VaultClient } from "../mypage/VaultClient";
 
 export const metadata = {
-  title: "내 비밀번호 금고 | PassMaster",
+  title: "내 비밀번호 설정 | PassMaster",
 };
 
 export default async function VaultPage() {
@@ -51,10 +51,10 @@ export default async function VaultPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              내 비밀번호 금고
+              내 비밀번호 설정
             </h1>
             <p className="text-sm leading-6 text-slate-600">
-              자주 쓰는 사이트 계정 정보를 안전하게 보관하세요.
+              자주 쓰는 사이트 계정 정보를 안전하게 관리하세요.
             </p>
           </div>
           <Link

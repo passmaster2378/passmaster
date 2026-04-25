@@ -117,7 +117,7 @@ export default async function MyPage() {
               href="/vault"
               className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
             >
-              내 비밀번호 금고
+              내 비밀번호 설정
             </Link>
             <Link
               href="/"
