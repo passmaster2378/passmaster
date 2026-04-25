@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-import { setOrderStatus } from "./actions";
+import { AdminOrdersClient } from "./AdminOrdersClient";
 
 export const metadata = {
   title: "관리자 주문 승인 | PassMaster",
 };
-
-function formatKrw(amount: number) {
-  return new Intl.NumberFormat("ko-KR").format(amount);
-}
 
 export default async function AdminOrdersPage() {
   const supabase = await createSupabaseServerClient();
@@ -117,54 +113,9 @@ export default async function AdminOrdersPage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-sm shadow-slate-900/5">
-          {orders.length === 0 ? (
-            <p className="text-sm text-slate-600">대기 중인 신청이 없어요.</p>
-          ) : (
-            <ul className="divide-y divide-slate-200">
-              {orders.map((o) => (
-                <li key={o.id} className="py-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0 text-sm">
-                      <p className="font-semibold text-slate-900">
-                        {formatKrw(o.amount)}원 · {o.depositor_name}{" "}
-                        <span className="text-xs font-medium text-slate-600">
-                          ({o.status})
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-slate-600">
-                        user_id: <span className="font-mono">{o.user_id}</span>
-                      </p>
-                      <p className="mt-1 text-xs text-slate-600">
-                        {new Date(o.created_at).toLocaleString("ko-KR")}
-                        {o.memo ? ` · ${o.memo}` : ""}
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <form action={async () => setOrderStatus(o.id, "paid")}>
-                        <button
-                          type="submit"
-                          className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700"
-                        >
-                          승인
-                        </button>
-                      </form>
-                      <form action={async () => setOrderStatus(o.id, "rejected")}>
-                        <button
-                          type="submit"
-                          className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm shadow-slate-900/15 transition hover:bg-slate-800"
-                        >
-                          거절
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <AdminOrdersClient
+          initialOrders={orders.map(({ currency: _c, method: _m, ...rest }) => rest)}
+        />
       )}
     </section>
   );
