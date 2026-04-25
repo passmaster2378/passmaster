@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-import { listAllOrders, setOrderStatus } from "./actions";
+import { setOrderStatus } from "./actions";
 
 export const metadata = {
   title: "관리자 주문 승인 | PassMaster",
@@ -54,17 +54,32 @@ export default async function AdminOrdersPage() {
   }
 
   let ordersTableMissing = false;
-  let orders: Awaited<ReturnType<typeof listAllOrders>> = [];
-  try {
-    orders = await listAllOrders();
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "";
-    if (msg.toLowerCase().includes("relation") && msg.includes("orders")) {
+  let ordersLoadError = "";
+  const ordersRes = await supabase
+    .from("orders")
+    .select("id,user_id,depositor_name,amount,currency,method,status,memo,created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (ordersRes.error) {
+    if (String((ordersRes.error as { code?: string }).code) === "42P01") {
       ordersTableMissing = true;
     } else {
-      throw e;
+      ordersLoadError = ordersRes.error.message;
     }
   }
+
+  const orders = (ordersRes.data ?? []) as Array<{
+    id: string;
+    user_id: string;
+    depositor_name: string;
+    amount: number;
+    currency: string;
+    method: string;
+    status: "pending" | "paid" | "cancelled" | "rejected";
+    memo: string | null;
+    created_at: string;
+  }>;
 
   return (
     <section className="space-y-6">
@@ -91,6 +106,15 @@ export default async function AdminOrdersPage() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           <span className="font-semibold">orders</span> 테이블이 없어요. Supabase SQL
           Editor에서 <span className="font-semibold">supabase/orders.sql</span>을 실행해 주세요.
+        </div>
+      ) : ordersLoadError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+          주문 목록을 불러오지 못했어요:{" "}
+          <span className="font-semibold">{ordersLoadError}</span>
+          <div className="mt-2 text-xs text-red-800">
+            보통 <span className="font-semibold">supabase/admin.sql</span> 미실행 또는{" "}
+            <span className="font-semibold">profiles.is_admin</span> 설정 문제입니다.
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-6 shadow-sm shadow-slate-900/5">
