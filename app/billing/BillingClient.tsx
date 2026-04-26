@@ -14,6 +14,21 @@ function formatKrw(amount: number) {
   return new Intl.NumberFormat("ko-KR").format(amount);
 }
 
+function statusLabel(status: OrderRow["status"]) {
+  switch (status) {
+    case "pending":
+      return "신청중";
+    case "paid":
+      return "승인완료";
+    case "rejected":
+      return "승인거절";
+    case "cancelled":
+      return "취소";
+    default:
+      return status;
+  }
+}
+
 export function BillingClient({
   defaultDepositorName,
   initialOrders,
@@ -131,7 +146,8 @@ export function BillingClient({
                   {formatKrw(o.amount)}원 · {o.depositor_name}
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
-                  상태: <span className="font-medium">{o.status}</span> ·{" "}
+                  상태: <span className="font-medium">{statusLabel(o.status)}</span>{" "}
+                  ·{" "}
                   {new Date(o.created_at).toLocaleString("ko-KR")}
                 </p>
                 {o.memo ? (
