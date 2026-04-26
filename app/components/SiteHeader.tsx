@@ -23,7 +23,13 @@ export async function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex flex-wrap items-center justify-end gap-2">
+          <Link
+            href="/exams"
+            className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 sm:px-4"
+          >
+            시험
+          </Link>
           {user ? (
             <>
               <Link

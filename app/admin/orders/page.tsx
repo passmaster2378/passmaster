@@ -89,12 +89,20 @@ export default async function AdminOrdersPage() {
               무통장 입금 신청을 확인하고 승인/거절할 수 있어요.
             </p>
           </div>
-          <Link
-            href="/billing"
-            className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
-          >
-            결제/입금으로
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link
+              href="/admin/certificates"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              자격증(문제은행) 현황
+            </Link>
+            <Link
+              href="/billing"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              결제/입금으로
+            </Link>
+          </div>
         </div>
       </div>
 
