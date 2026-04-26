@@ -4,6 +4,8 @@ import { signOut } from "../auth/actions";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { ProfileClient } from "./ProfileClient";
 import type { ProfileRow } from "../profile/actions";
+import { listMyNotifications } from "../notifications/actions";
+import { NotificationsClient } from "./NotificationsClient";
 
 export const metadata = {
   title: "마이페이지 | PassMaster",
@@ -37,6 +39,17 @@ export default async function MyPage() {
     }
   } else {
     initialProfile = (profileRes.data as ProfileRow | null) ?? null;
+  }
+
+  let notifications: Awaited<ReturnType<typeof listMyNotifications>> = [];
+  let notificationsMissing = false;
+  try {
+    notifications = await listMyNotifications(5);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.toLowerCase().includes("relation") && msg.includes("notifications")) {
+      notificationsMissing = true;
+    }
   }
 
   return (
@@ -75,6 +88,16 @@ export default async function MyPage() {
         initialProfile={initialProfile}
         tableMissing={profileTableMissing}
       />
+
+      {notificationsMissing ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          알림 기능을 사용하려면 Supabase SQL Editor에서{" "}
+          <span className="font-semibold">supabase/notifications.sql</span>을 실행해
+          주세요.
+        </div>
+      ) : (
+        <NotificationsClient initial={notifications} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5">
