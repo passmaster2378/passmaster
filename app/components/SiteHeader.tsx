@@ -30,7 +30,7 @@ export async function SiteHeader() {
                 href="/mypage"
                 className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
               >
-                마이페이지
+                대시보드
               </Link>
               <form action={signOut}>
                 <button
@@ -59,7 +59,7 @@ export async function SiteHeader() {
                 href="/mypage"
                 className="inline-flex h-10 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
               >
-                마이페이지
+                대시보드
               </Link>
             </>
           )}
