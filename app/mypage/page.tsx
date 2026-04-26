@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "../auth/actions";
 import { createSupabaseServerClient } from "../lib/supabase/server";
-import { ProfileClient } from "./ProfileClient";
+import { MyInfoClient } from "./MyInfoClient";
 import type { ProfileRow } from "../profile/actions";
 import { listMyNotifications } from "../notifications/actions";
 import { NotificationsClient } from "./NotificationsClient";
@@ -69,6 +69,9 @@ export default async function MyPage() {
   } else {
     initialProfile = (profileRes.data as ProfileRow | null) ?? null;
   }
+
+  const planLabel: "Pro" | "Free" =
+    !profileRes.error && profileRes.data?.plan === "pro" ? "Pro" : "Free";
 
   let notifications: Awaited<ReturnType<typeof listMyNotifications>> = [];
   let notificationsMissing = false;
@@ -197,16 +200,28 @@ export default async function MyPage() {
             <h2 className="text-sm font-semibold text-slate-900">빠른 이동</h2>
             <div className="mt-3 space-y-2 text-sm">
               <Link
+                href="#section-profile"
+                className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                1. 내 정보 관리
+              </Link>
+              <Link
+                href="#section-enrollment"
+                className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                2. 수강 신청 현황
+              </Link>
+              <Link
+                href="#section-status"
+                className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                3. 수강 상태
+              </Link>
+              <Link
                 href="/"
                 className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
               >
                 홈(체험/문제)
-              </Link>
-              <Link
-                href="#enrollment"
-                className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                수강/신청 현황(아래)
               </Link>
               <Link
                 href="/billing"
@@ -215,46 +230,16 @@ export default async function MyPage() {
                 수강/결제 신청
               </Link>
               <Link
-                href="#account"
+                href="#account-password"
                 className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                내 정보 관리(아래)
-              </Link>
-              <Link
-                href="/vault"
-                className="block rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                개인정보(비밀번호) 관리
+                비밀번호 변경
               </Link>
             </div>
             <p className="mt-3 text-xs leading-5 text-slate-500">
               수강 전에는 홈의 체험 문제로 시작하고, 결제/승인 이후 본 수강 학습 화면이
               연결될 예정입니다.
             </p>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5">
-            <h2 className="text-sm font-semibold text-slate-900">내 요약</h2>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">이메일</span>
-                <span className="max-w-[60%] truncate font-medium text-slate-800">
-                  {user.email ?? "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">이름</span>
-                <span className="font-medium text-slate-800">
-                  {initialProfile?.full_name?.trim() ? initialProfile.full_name : "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">이용권</span>
-                <span className="font-medium text-slate-800">
-                  {profileRes.data?.plan === "pro" ? "Pro" : "Free"}
-                </span>
-              </div>
-            </div>
           </div>
 
           {notificationsMissing ? (
@@ -269,65 +254,30 @@ export default async function MyPage() {
         </div>
 
         <div className="space-y-4 lg:col-span-8">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <p className="text-xs font-medium text-slate-500">주 활성 과정</p>
-              <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-900">
-                {activeEnrollment?.certificate_name ?? "아직 없음"}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                {activeEnrollment
-                  ? `${enrollmentStatusKo(String(activeEnrollment.status))} · 진행 ${
-                      activeEnrollment.progress_percent
-                    }%`
-                  : "수강 신청 후 여기에 표시됩니다."}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <p className="text-xs font-medium text-slate-500">최근 점수</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {activeEnrollment?.last_score_percent != null
-                  ? `${activeEnrollment.last_score_percent}%`
-                  : "—"}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">모의고사/진단 결과가 들어갑니다.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <p className="text-xs font-medium text-slate-500">합격 추정</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">
-                {activeEnrollment
-                  ? passStatusKo(String(activeEnrollment.pass_status))
-                  : "—"}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">데이터가 쌓이면 정확해집니다.</p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-2">
-            <LearningSparkline
-              title="최근 학습량(문항 수)"
-              subtitle="매일 푼 문항 수를 14일 추세로 보여줍니다."
-              points={volumePoints}
-            />
-            <LearningSparkline
-              title="일별 정답률(추정)"
-              subtitle="그날 푼 문항 기준으로 정답률(%)을 계산합니다."
-              points={accuracyPoints}
-              strokeClass="text-emerald-600"
-            />
-          </div>
+          <MyInfoClient
+            userEmail={user.email ?? ""}
+            planLabel={planLabel}
+            initialProfile={initialProfile}
+            tableMissing={profileTableMissing}
+          />
 
           <div
-            id="enrollment"
+            id="section-enrollment"
             className="scroll-mt-24 rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5"
           >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-slate-900">수강/신청 현황</h2>
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-slate-900">2. 수강 신청 현황</h2>
+              <p className="text-sm text-slate-600">신청한 자격증 과정과 처리 상태를 확인하세요.</p>
+            </div>
+            <div className="mt-3 flex items-center justify-end">
               <span className="text-xs text-slate-500">최대 10개</span>
             </div>
             {enrollments.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-600">
-                아직 신청 내역이 없어요. <span className="font-medium">수강/결제 신청</span>{" "}
+              <p className="mt-2 text-sm text-slate-600">
+                아직 신청 내역이 없어요.{" "}
+                <Link className="font-medium text-blue-700 hover:underline" href="/billing">
+                  수강/결제 신청
+                </Link>
                 을 먼저 완료해 주세요.
               </p>
             ) : (
@@ -368,11 +318,64 @@ export default async function MyPage() {
             )}
           </div>
 
-          <div id="account" className="scroll-mt-24">
-            <ProfileClient
-              initialProfile={initialProfile}
-              tableMissing={profileTableMissing}
-            />
+          <div
+            id="section-status"
+            className="scroll-mt-24 space-y-4 rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5 shadow-sm shadow-slate-900/5"
+          >
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-slate-900">3. 수강 상태</h2>
+              <p className="text-sm text-slate-600">
+                현재 과정의 진행·점수·학습 그래프를 한눈에 봅니다.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
+                <p className="text-xs font-medium text-slate-500">주 활성 과정</p>
+                <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-900">
+                  {activeEnrollment?.certificate_name ?? "아직 없음"}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  {activeEnrollment
+                    ? `${enrollmentStatusKo(String(activeEnrollment.status))} · 진행 ${
+                        activeEnrollment.progress_percent
+                      }%`
+                    : "수강 신청 후 여기에 표시됩니다."}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
+                <p className="text-xs font-medium text-slate-500">최근 점수</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {activeEnrollment?.last_score_percent != null
+                    ? `${activeEnrollment.last_score_percent}%`
+                    : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">모의고사/진단 결과가 들어갑니다.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
+                <p className="text-xs font-medium text-slate-500">합격 추정</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {activeEnrollment
+                    ? passStatusKo(String(activeEnrollment.pass_status))
+                    : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">데이터가 쌓이면 정확해집니다.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <LearningSparkline
+                title="최근 학습량(문항 수)"
+                subtitle="매일 푼 문항 수를 14일 추세로 보여줍니다."
+                points={volumePoints}
+              />
+              <LearningSparkline
+                title="일별 정답률(추정)"
+                subtitle="그날 푼 문항 기준으로 정답률(%)을 계산합니다."
+                points={accuracyPoints}
+                strokeClass="text-emerald-600"
+              />
+            </div>
           </div>
         </div>
       </div>

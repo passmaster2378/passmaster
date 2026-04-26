@@ -25,10 +25,10 @@ export default async function Home() {
         <div className="flex flex-col gap-3 sm:flex-row">
           {user ? (
             <a
-              href="/vault"
+              href="/mypage#account-password"
               className="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
             >
-              내 비밀번호 설정
+              비밀번호 변경
             </a>
           ) : (
             <a
