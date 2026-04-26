@@ -3,6 +3,16 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 
+function isAdminEmail(email: string | null | undefined) {
+  if (!email) return false;
+  const raw = process.env.ADMIN_EMAILS ?? "";
+  const allow = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return allow.includes(email.trim().toLowerCase());
+}
+
 function requireSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -30,6 +40,17 @@ export async function signInWithPassword(formData: FormData) {
 
   if (error) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isAdminEmail(user?.email)) {
+    await supabase
+      .from("profiles")
+      .upsert({ user_id: user!.id, is_admin: true }, { onConflict: "user_id" });
+    redirect("/admin/orders");
   }
 
   redirect("/mypage");

@@ -9,6 +9,16 @@ function safeNextPath(rawNext: string | null) {
   return rawNext;
 }
 
+function isAdminEmail(email: string | null | undefined) {
+  if (!email) return false;
+  const raw = process.env.ADMIN_EMAILS ?? "";
+  const allow = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return allow.includes(email.trim().toLowerCase());
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -43,6 +53,19 @@ export async function GET(request: NextRequest) {
     const params = new URLSearchParams();
     params.set("error", error.message);
     return NextResponse.redirect(new URL(`/login?${params.toString()}`, url.origin));
+  }
+
+  // Auto admin: if email is allowlisted, mark as admin and route to admin page.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isAdminEmail(user?.email)) {
+    // Best-effort: upsert admin flag. Requires supabase/admin.sql to be applied.
+    await supabase
+      .from("profiles")
+      .upsert({ user_id: user!.id, is_admin: true }, { onConflict: "user_id" });
+    return NextResponse.redirect(new URL("/admin/orders", url.origin));
   }
 
   return NextResponse.redirect(new URL(next, url.origin));
